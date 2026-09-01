@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+
+{% block content %}
+<section class="upload-hero">
+  <h2>Upload a Track Vibration Dataset</h2>
+  <p class="dim">Analyze real accelerometer readings between two stations instead of the simulated demo track. RailPulse runs FFT and Fourier-series analysis on every sensor in your file and scores each one for defect signatures.</p>
+</section>
+
+<div class="upload-grid">
+
+  <div class="panel upload-panel">
+    <form id="upload-form">
+      <div class="route-select-row">
+        <label>From station
+          <select id="select-from" required></select>
+        </label>
+        <label>To station
+          <select id="select-to" required></select>
+        </label>
+      </div>
+
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload CSV file">
+        <input type="file" id="file-input" accept=".csv" hidden>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0-12l-4 4m4-4l4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <p class="dropzone__title">Drop your CSV here, or click to browse</p>
+        <p class="dropzone__sub dim mono" id="file-chosen">No file selected</p>
+      </div>
+
+      <div class="form-alert" id="form-alert" hidden></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary" id="btn-submit">Analyze Dataset</button>
+        <button type="button" class="btn btn--ghost" id="btn-simulated">Use Simulated Demo Data Instead</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel schema-panel">
+    <h3>Expected CSV Format</h3>
+    <p class="dim">Long format — one row per vibration sample. Column names are case-insensitive.</p>
+
+    <table class="schema-table">
+      <thead><tr><th>Column</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">sensor_id</td><td class="req">Required</td><td>Unique ID per sensor (e.g. S01)</td></tr>
+        <tr><td class="mono">chainage_km</td><td class="req">Required</td><td>Sensor position along the route, km</td></tr>
+        <tr><td class="mono">acceleration_g</td><td class="req">Required</td><td>Accelerometer reading, in g</td></tr>
+        <tr><td class="mono">sample_index</td><td class="opt">Optional</td><td>Sample order (defaults to row order)</td></tr>
+        <tr><td class="mono">sampling_rate_hz</td><td class="opt">Optional</td><td>Sensor sampling rate (default 1000 Hz)</td></tr>
+        <tr><td class="mono">speed_limit_kmph</td><td class="opt">Optional</td><td>Posted speed limit for that segment</td></tr>
+        <tr><td class="mono">sensor_name</td><td class="opt">Optional</td><td>Display name for the sensor</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Example rows</h4>
+    <pre class="mono code-sample">sensor_id,chainage_km,sample_index,acceleration_g,sampling_rate_hz
+S01,3.5,0,0.021,1000
+S01,3.5,1,0.034,1000
+S01,3.5,2,0.019,1000
+S02,7.2,0,0.052,1000</pre>
+
+    <p class="dim small">Each sensor needs at least 32 samples for a usable FFT. RailPulse scores condition using energy concentrated in known corrugation, wheel-flat, joint-gap and rail-crack frequency bands — treat results as a heuristic screening pass, not a certified inspection.</p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

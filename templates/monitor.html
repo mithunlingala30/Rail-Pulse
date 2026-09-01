@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Monitor{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+  if (typeof Chart === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="monitor-grid">
+
+  <!-- LEFT: dashboard -->
+  <div class="monitor-main">
+
+    <section class="kpis" aria-label="System summary">
+      <div class="kpi-card">
+        <span class="kpi-card__label">Sensors In Range</span>
+        <span class="kpi-card__value mono" id="kpi-total">—</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Avg. Track Health</span>
+        <span class="kpi-card__value mono" id="kpi-health">—</span>
+      </div>
+      <div class="kpi-card kpi-card--warning">
+        <span class="kpi-card__label">Warning Segments</span>
+        <span class="kpi-card__value mono" id="kpi-warning">—</span>
+      </div>
+      <div class="kpi-card kpi-card--critical">
+        <span class="kpi-card__label">Critical Segments</span>
+        <span class="kpi-card__value mono" id="kpi-critical">—</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-card__label">Active Alerts</span>
+        <span class="kpi-card__value mono" id="kpi-alerts">—</span>
+      </div>
+    </section>
+
+    <section class="track-panel" aria-label="Track sensor map">
+      <div class="track-panel__head">
+        <h2 id="track-title">Track Sensor Map</h2>
+        <div class="legend">
+          <span><i class="lamp lamp--healthy"></i> Healthy</span>
+          <span><i class="lamp lamp--warning"></i> Warning</span>
+          <span><i class="lamp lamp--critical"></i> Critical</span>
+        </div>
+      </div>
+      <div class="rail-track" id="rail-track" role="list"></div>
+      <div class="rail-track__chainage">
+        <span id="chainage-start">0 km</span><span id="chainage-end">— km</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+
+      <div class="panel detail-panel" id="detail-panel">
+        <div class="detail-panel__head">
+          <div>
+            <h2 id="detail-title">Select a sensor</h2>
+            <p class="mono dim" id="detail-sub">—</p>
+          </div>
+          <span class="status-pill" id="detail-status">—</span>
+        </div>
+
+        <div class="detail-panel__stats">
+          <div><span class="dim">Health Score</span><strong class="mono" id="stat-score">—</strong></div>
+          <div><span class="dim">Defect Signature</span><strong id="stat-defect">—</strong></div>
+          <div><span class="dim">Dominant Frequency</span><strong class="mono" id="stat-freq">—</strong></div>
+          <div><span class="dim">Speed Limit</span><strong class="mono" id="stat-speed">—</strong></div>
+        </div>
+
+        <p class="recommendation" id="stat-action">Select a sensor on the track map to inspect its vibration signal.</p>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>Time-Domain Signal <span class="dim mono">accelerometer, g</span></h3>
+            <canvas id="chart-timedomain" height="140"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Frequency Spectrum (FFT) <span class="dim mono">amplitude vs Hz</span></h3>
+            <canvas id="chart-fft" height="140"></canvas>
+          </div>
+          <div class="chart-card chart-card--wide">
+            <div class="chart-card__head">
+              <h3>Fourier Series Reconstruction <span class="dim mono">original vs. synthesized</span></h3>
+              <div class="harmonics-control">
+                <label for="harmonics-slider">Harmonics: <span id="harmonics-value" class="mono">8</span></label>
+                <input type="range" id="harmonics-slider" min="1" max="40" value="8">
+                <span class="mono dim" id="fidelity-readout">fidelity —</span>
+              </div>
+            </div>
+            <canvas id="chart-fourier" height="130"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel alerts-panel" aria-label="Alert feed">
+        <div class="alerts-panel__head">
+          <h2>Alert Feed</h2>
+          <span class="mono dim" id="alerts-count">0</span>
+        </div>
+        <div class="alerts-list" id="alerts-list">
+          <p class="dim empty-state">No alerts yet. Monitoring nominal.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <footer class="footer">
+      <p>RailPulse is a demonstration system. Simulated readings are synthetic; uploaded-dataset scoring uses a frequency-band heuristic and is not a certified inspection. Frequency bands are illustrative approximations of published corrugation, wheel-flat, joint-gap and rail-crack signatures.</p>
+    </footer>
+  </div>
+
+  <!-- RIGHT: route + Google Map aside -->
+  <aside class="route-aside" aria-label="Route and map">
+    <div class="panel route-card">
+      <h2>Route</h2>
+      <div class="route-select-row route-select-row--compact">
+        <label>From
+          <select id="select-from"></select>
+        </label>
+        <label>To
+          <select id="select-to"></select>
+        </label>
+      </div>
+      <button type="button" class="btn btn--small btn--primary" id="btn-apply-route">Apply Route</button>
+      <div class="route-summary" id="route-summary">—</div>
+      <div class="dataset-badge" id="dataset-badge">Simulated demo data</div>
+    </div>
+
+    <div class="panel map-card">
+      <div class="map-frame">
+        <iframe id="map-iframe" title="Route map" src="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <p class="map-caption dim">Google Maps route between the selected stations.</p>
+    </div>
+
+    <div class="panel route-card route-card--muted" id="warnings-card" hidden>
+      <h3>Upload Warnings</h3>
+      <ul class="warnings-list" id="warnings-list"></ul>
+    </div>
+  </aside>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
